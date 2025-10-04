@@ -1,0 +1,49 @@
+
+"""A Simple Hobby Matcher (Step 6)"""
+
+import from byllm.llm { Model }
+
+glob llm = Model(model_name="gemini/gemini-2.0-flash", verbose=False);
+
+def give_comment(preferences: str, turn: str) -> str by llm();
+
+walker HobbyMatcher {
+    has preferences: str;
+
+    can start with `root entry;
+    can match_hobby with turn entry;
+}
+
+node turn {
+    has ideal_hobbies: str == 'sports, arts, coding, reading, travel';
+}
+
+with entry:__main__ {
+    root spawn HobbyMatcher('football, music, coding');
+    root spawn HobbyMatcher('painting, hiking');
+    root spawn HobbyMatcher('gaming, sleeping, dancing');
+}
+
+impl HobbyMatcher.start {
+    if not [root -->  (`?turn)] {
+        next = root ++> turn(str(self.preferences));
+    } else {
+        next = [root --> (`?turn)];
+    }
+    visit next;
+}
+
+impl HobbyMatcher.match_hobby {
+    if [-->] {
+        visit [-->];
+    } else {
+        if self.preferences < here.ideal_hobbies {
+            print(give_comment(self.preferences, here.ideal_hobbies));
+            print('Suggestion: ' + give_comment(self.preferences, here.ideal_hobbies));
+            here ++> turn(here.ideal_hobbies);
+        } else { 
+            print(f'Perfect Match! Your hobbies "{self.preferences}" align well');
+            disengage;
+        }
+    }
+}
